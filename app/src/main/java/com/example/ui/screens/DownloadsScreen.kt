@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -28,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.OpenInNew
@@ -84,11 +86,63 @@ fun DownloadsScreen(
     val context = LocalContext.current
     var selectedDownload by remember { mutableStateOf<DownloadEntity?>(null) }
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(PitchBlack)
+            .statusBarsPadding() // Proper safe status bar inset
     ) {
+        // Downloads Top Bar (matching Screenshot 4 of YTDLnis)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Downloads",
+                color = TextWhite,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (downloads.isNotEmpty()) {
+                IconButton(onClick = onClearAll) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteSweep,
+                        contentDescription = "Clear All",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
+
+        // Subheader showing destination folder info
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Folder,
+                contentDescription = null,
+                tint = PinterestRed,
+                modifier = Modifier.size(15.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Pictures/PinterestDL • ${downloads.size} items",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         if (downloads.isEmpty()) {
             // Sleek Empty State
             Column(
@@ -116,7 +170,7 @@ fun DownloadsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "No Downloads Saved",
+                    text = "No Downloads Yet",
                     color = TextWhite,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold
@@ -132,55 +186,16 @@ fun DownloadsScreen(
                 )
             }
         } else {
-            // 4-Column Photo Grid (Matching Home Grid layout, saving space)
+            // 4-Column Photo Grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
-                contentPadding = PaddingValues(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 84.dp),
+                contentPadding = PaddingValues(start = 6.dp, end = 6.dp, top = 2.dp, bottom = 84.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .fillMaxSize()
                     .testTag("downloads_grid_4col")
             ) {
-                // Top Directory & Count Header Bar
-                item(span = { GridItemSpan(4) }) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Folder,
-                                contentDescription = null,
-                                tint = PinterestRed,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Pictures/PinterestDL (${downloads.size})",
-                                color = TextSecondary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        TextButton(
-                            onClick = onClearAll,
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "Clear All",
-                                color = TextMuted,
-                                fontSize = 11.sp
-                            )
-                        }
-                    }
-                }
-
-                // Grid Items: purely thumbnails with rounded corners (no titles taking vertical space)
                 items(
                     items = downloads,
                     key = { it.id }
@@ -259,7 +274,6 @@ private fun DownloadDetailDialog(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                // Top Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -283,7 +297,6 @@ private fun DownloadDetailDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // High-Res Image View
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -305,7 +318,6 @@ private fun DownloadDetailDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // File Details
                 Text(
                     text = download.fileName,
                     color = PinterestRed,
@@ -333,7 +345,6 @@ private fun DownloadDetailDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -399,9 +410,7 @@ private fun openMediaFile(context: Context, download: DownloadEntity) {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.startActivity(Intent.createChooser(intent, "Open Pin with"))
-    } catch (e: Exception) {
-        // Fallback
-    }
+    } catch (_: Exception) { }
 }
 
 private fun shareMediaFile(context: Context, download: DownloadEntity) {
@@ -419,7 +428,5 @@ private fun shareMediaFile(context: Context, download: DownloadEntity) {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.startActivity(Intent.createChooser(intent, "Share Pin"))
-    } catch (e: Exception) {
-        // Fallback
-    }
+    } catch (_: Exception) { }
 }

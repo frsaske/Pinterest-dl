@@ -9,12 +9,20 @@ import com.example.data.DownloadEntity
 import com.example.data.PinItem
 import com.example.data.PinterestRepository
 import com.example.util.NotificationHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONArray
+import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 data class UiNotification(
     val id: Long = System.currentTimeMillis(),
@@ -28,6 +36,8 @@ data class UiState(
     val searchQuery: String = "",
     val activeQuery: String = "",
     val hasSearched: Boolean = false,
+    val searchSuggestions: List<String> = emptyList(),
+    val isSuggestionsVisible: Boolean = false,
     val pins: List<PinItem> = emptyList(),
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
@@ -44,11 +54,17 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
     private val database = AppDatabase.getDatabase(application)
     private val repository = PinterestRepository(application, database.downloadDao())
 
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .readTimeout(5, TimeUnit.SECONDS)
+        .build()
+
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     private var currentOffset = 0
     private var bulkJob: Job? = null
+    private var suggestionJob: Job? = null
 
     init {
         // Collect downloaded pins from Room database
@@ -64,7 +80,7 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
 
-        // Check if there is a saved last search query
+        // Restore last search query if available
         val lastQuery = prefs.getString("last_search_query", null)
         if (!lastQuery.isNullOrBlank()) {
             _uiState.value = _uiState.value.copy(
@@ -74,7 +90,6 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
             )
             loadPins(query = lastQuery, isInitial = true)
         } else {
-            // First run: show cool discover UI without default query
             _uiState.value = _uiState.value.copy(
                 searchQuery = "",
                 activeQuery = "",
@@ -84,24 +99,69 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun selectTab(index: Int) {
-        _uiState.value = _uiState.value.copy(currentTab = index)
+        _uiState.value = _uiState.value.copy(currentTab = index, isSuggestionsVisible = false)
     }
 
     fun onSearchQueryChanged(query: String) {
-        _uiState.value = _uiState.value.copy(searchQuery = query)
+        _uiState.value = _uiState.value.copy(
+            searchQuery = query,
+            isSuggestionsVisible = query.trim().isNotEmpty()
+        )
+
+        // Debounced search suggestions fetching (like YouTube)
+        suggestionJob?.cancel()
+        if (query.trim().length >= 2) {
+            suggestionJob = viewModelScope.launch {
+                delay(180)
+                val suggestions = fetchAutocompleteSuggestions(query.trim())
+                _uiState.value = _uiState.value.copy(searchSuggestions = suggestions)
+            }
+        } else {
+            _uiState.value = _uiState.value.copy(searchSuggestions = emptyList())
+        }
+    }
+
+    fun hideSuggestions() {
+        _uiState.value = _uiState.value.copy(isSuggestionsVisible = false)
+    }
+
+    private suspend fun fetchAutocompleteSuggestions(query: String): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            val url = "https://suggestqueries.google.com/complete/search?client=chrome&hl=en&q=$encoded"
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                .build()
+
+            val response = httpClient.newCall(request).execute()
+            if (response.isSuccessful) {
+                val body = response.body?.string().orEmpty()
+                val jsonArray = JSONArray(body)
+                val suggestionsArray = jsonArray.optJSONArray(1)
+                val list = mutableListOf<String>()
+                if (suggestionsArray != null) {
+                    for (i in 0 until minOf(suggestionsArray.length(), 6)) {
+                        list.add(suggestionsArray.getString(i))
+                    }
+                }
+                return@withContext list
+            }
+        } catch (_: Exception) { }
+        emptyList()
     }
 
     fun performSearch(query: String? = null) {
         val targetQuery = (query ?: _uiState.value.searchQuery).trim()
         if (targetQuery.isEmpty()) return
 
-        // Persist last search query
         prefs.edit().putString("last_search_query", targetQuery).apply()
 
         _uiState.value = _uiState.value.copy(
             searchQuery = targetQuery,
             activeQuery = targetQuery,
             hasSearched = true,
+            isSuggestionsVisible = false,
             currentTab = 0
         )
         currentOffset = 0
@@ -168,7 +228,6 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
                 )
             )
 
-            // Show system progress notification
             NotificationHelper.showDownloadProgress(
                 getApplication(),
                 notificationId,
@@ -183,11 +242,10 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
             result.onSuccess { entity ->
                 _uiState.value = _uiState.value.copy(
                     notification = UiNotification(
-                        message = "Saved ${entity.fileName}",
+                        message = "✓ Saved ${entity.fileName}",
                         isSuccess = true
                     )
                 )
-                // Post system complete notification
                 NotificationHelper.showDownloadComplete(
                     getApplication(),
                     notificationId,
@@ -256,7 +314,7 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
             _uiState.value = _uiState.value.copy(
                 isBulkDownloading = false,
                 notification = UiNotification(
-                    message = "Bulk download finished! $successCount saved.",
+                    message = "Bulk complete! $successCount saved.",
                     isSuccess = true
                 )
             )

@@ -14,16 +14,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -31,7 +30,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,42 +82,48 @@ fun PinterestAppRoot(
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets.statusBars,
-        topBar = {
-            PinterestTopBar(
-                searchQuery = uiState.searchQuery,
-                onSearchQueryChanged = { viewModel.onSearchQueryChanged(it) },
-                onSearchSubmitted = { query -> viewModel.performSearch(query) },
-                onQuickFilterSelected = { filter -> viewModel.performSearch(filter) }
-            )
-        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0), // Handled explicitly with statusBarsPadding to prevent overlapping
         bottomBar = {
             YtdlnisBottomNavBar(
                 selectedTab = uiState.currentTab,
                 onTabSelected = { tabIndex -> viewModel.selectTab(tabIndex) },
                 downloadsBadgeCount = uiState.downloads.size,
-                modifier = Modifier.background(PitchBlack)
+                modifier = Modifier
+                    .background(PitchBlack)
+                    .navigationBarsPadding()
             )
         },
         containerColor = PitchBlack
-    ) { innerPadding ->
+    ) { _ ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .background(PitchBlack)
         ) {
             when (uiState.currentTab) {
                 0 -> {
-                    HomeScreen(
-                        uiState = uiState,
-                        onDownloadPin = { pin -> viewModel.downloadPin(pin) },
-                        onStartBulkDownload = { viewModel.startBulkDownload() },
-                        onCancelBulkDownload = { viewModel.cancelBulkDownload() },
-                        onLoadMore = { viewModel.loadMorePins() },
-                        onPreviewPin = { pin -> viewModel.setPreviewPin(pin) },
-                        onSelectSuggestion = { tag -> viewModel.performSearch(tag) }
-                    )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        PinterestTopBar(
+                            searchQuery = uiState.searchQuery,
+                            onSearchQueryChanged = { viewModel.onSearchQueryChanged(it) },
+                            onSearchSubmitted = { query -> viewModel.performSearch(query) },
+                            onQuickFilterSelected = { filter -> viewModel.performSearch(filter) },
+                            suggestions = uiState.searchSuggestions,
+                            isSuggestionsVisible = uiState.isSuggestionsVisible,
+                            onSuggestionClicked = { suggestion -> viewModel.performSearch(suggestion) }
+                        )
+
+                        HomeScreen(
+                            uiState = uiState,
+                            onDownloadPin = { pin -> viewModel.downloadPin(pin) },
+                            onStartBulkDownload = { viewModel.startBulkDownload() },
+                            onCancelBulkDownload = { viewModel.cancelBulkDownload() },
+                            onLoadMore = { viewModel.loadMorePins() },
+                            onPreviewPin = { pin -> viewModel.setPreviewPin(pin) },
+                            onSelectSuggestion = { tag -> viewModel.performSearch(tag) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
                 1 -> {
                     DownloadsScreen(
@@ -142,7 +146,7 @@ fun PinterestAppRoot(
                     onDismiss = { viewModel.dismissNotification() },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = 76.dp)
                 )
             }
         }
@@ -155,10 +159,10 @@ private fun FloatingNotificationPill(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Auto-dismiss completed notifications after 3 seconds
+    // Auto-dismiss completed notifications after 2.5 seconds
     LaunchedEffect(notification.id) {
         if (!notification.isProgress) {
-            delay(3000)
+            delay(2500)
             onDismiss()
         }
     }
