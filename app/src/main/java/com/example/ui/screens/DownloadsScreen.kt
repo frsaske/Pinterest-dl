@@ -16,14 +16,16 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,11 +36,9 @@ import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -68,10 +68,10 @@ import com.example.ui.theme.DarkBorder
 import com.example.ui.theme.DarkGreyCard
 import com.example.ui.theme.DarkGreySurface
 import com.example.ui.theme.PitchBlack
-import com.example.ui.theme.PinterestRed
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.util.VibrationHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -84,15 +84,16 @@ fun DownloadsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var selectedDownload by remember { mutableStateOf<DownloadEntity?>(null) }
+    var initialGalleryIndex by remember { mutableStateOf<Int?>(null) }
+    var showClearConfirmDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(PitchBlack)
-            .statusBarsPadding() // Proper safe status bar inset
+            .statusBarsPadding()
     ) {
-        // Downloads Top Bar (matching Screenshot 4 of YTDLnis)
+        // Downloads Top Bar matching YTDLnis header style
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -108,7 +109,12 @@ fun DownloadsScreen(
             )
 
             if (downloads.isNotEmpty()) {
-                IconButton(onClick = onClearAll) {
+                IconButton(
+                    onClick = {
+                        VibrationHelper.vibrateClick(context, 20L)
+                        showClearConfirmDialog = true
+                    }
+                ) {
                     Icon(
                         imageVector = Icons.Default.DeleteSweep,
                         contentDescription = "Clear All",
@@ -129,7 +135,7 @@ fun DownloadsScreen(
             Icon(
                 imageVector = Icons.Default.Folder,
                 contentDescription = null,
-                tint = PinterestRed,
+                tint = TextWhite,
                 modifier = Modifier.size(15.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
@@ -144,7 +150,7 @@ fun DownloadsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (downloads.isEmpty()) {
-            // Sleek Empty State
+            // High contrast Empty State
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -155,13 +161,14 @@ fun DownloadsScreen(
                 Surface(
                     shape = CircleShape,
                     color = DarkGreyCard,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
                     modifier = Modifier.size(72.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.DownloadDone,
                             contentDescription = null,
-                            tint = PinterestRed.copy(alpha = 0.8f),
+                            tint = TextWhite.copy(alpha = 0.8f),
                             modifier = Modifier.size(36.dp)
                         )
                     }
@@ -196,17 +203,20 @@ fun DownloadsScreen(
                     .fillMaxSize()
                     .testTag("downloads_grid_4col")
             ) {
-                items(
+                itemsIndexed(
                     items = downloads,
-                    key = { it.id }
-                ) { download ->
+                    key = { _, it -> it.id }
+                ) { index, download ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(0.72f)
                             .clip(RoundedCornerShape(8.dp))
                             .background(DarkGreySurface)
-                            .clickable { selectedDownload = download }
+                            .clickable {
+                                VibrationHelper.vibrateClick(context, 20L)
+                                initialGalleryIndex = index
+                            }
                             .testTag("download_grid_item_${download.id}")
                     ) {
                         AsyncImage(
@@ -223,174 +233,275 @@ fun DownloadsScreen(
             }
         }
 
-        // Full Screen Item Detail & Management Dialog
-        selectedDownload?.let { download ->
-            DownloadDetailDialog(
-                download = download,
-                onDismiss = { selectedDownload = null },
-                onOpen = {
-                    openMediaFile(context, download)
-                    selectedDownload = null
+        // Swipeable Gallery Modal Viewer
+        initialGalleryIndex?.let { startIndex ->
+            if (downloads.isNotEmpty()) {
+                DownloadedGalleryViewer(
+                    downloads = downloads,
+                    initialIndex = startIndex,
+                    onDismiss = { initialGalleryIndex = null },
+                    onDeleteDownload = { download ->
+                        onDeleteDownload(download)
+                        initialGalleryIndex = null
+                    }
+                )
+            }
+        }
+
+        // Clear All Confirmation Dialog
+        if (showClearConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearConfirmDialog = false },
+                containerColor = DarkGreySurface,
+                title = {
+                    Text("Clear All Downloads?", color = TextWhite, fontWeight = FontWeight.Bold)
                 },
-                onShare = {
-                    shareMediaFile(context, download)
+                text = {
+                    Text(
+                        "This will clear the download records from the app history.",
+                        color = TextSecondary,
+                        fontSize = 13.5.sp
+                    )
                 },
-                onDelete = {
-                    onDeleteDownload(download)
-                    selectedDownload = null
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClearConfirmDialog = false
+                            onClearAll()
+                        }
+                    ) {
+                        Text("Clear", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearConfirmDialog = false }) {
+                        Text("Cancel", color = TextMuted)
+                    }
                 }
             )
         }
     }
 }
 
+/**
+ * Immersive, full-screen swipeable gallery viewer for downloaded media.
+ * Supports smooth horizontal swiping across all downloaded items with a clean white open button.
+ */
 @Composable
-private fun DownloadDetailDialog(
-    download: DownloadEntity,
+private fun DownloadedGalleryViewer(
+    downloads: List<DownloadEntity>,
+    initialIndex: Int,
     onDismiss: () -> Unit,
-    onOpen: () -> Unit,
-    onShare: () -> Unit,
-    onDelete: () -> Unit
+    onDeleteDownload: (DownloadEntity) -> Unit
 ) {
     val context = LocalContext.current
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy • HH:mm", Locale.getDefault())
-    val formattedDate = dateFormat.format(Date(download.downloadDate))
-    val formattedSize = Formatter.formatFileSize(context, download.fileSize)
+    val safeIndex = initialIndex.coerceIn(0, (downloads.size - 1).coerceAtLeast(0))
+    val pagerState = rememberPagerState(
+        initialPage = safeIndex,
+        pageCount = { downloads.size }
+    )
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Surface(
-            color = PitchBlack,
-            shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .background(PitchBlack)
         ) {
-            Column(
+            // Horizontal Pager for smooth swipe gestures
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                val download = downloads.getOrNull(page)
+                if (download != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(download.fileUri.ifEmpty { download.filePath })
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = download.title,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
+
+            // Top Header: Close button and counter
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.TopCenter),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x66000000))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0x66000000),
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Text(
-                        text = "Downloaded Pin",
-                        color = TextWhite,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "${pagerState.currentPage + 1} / ${downloads.size}",
+                        color = Color.White,
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                     )
-
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = TextWhite
-                        )
-                    }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.size(40.dp))
+            }
 
-                Box(
+            // Bottom Actions: File caption and small white open/share buttons
+            val currentDownload = downloads.getOrNull(pagerState.currentPage)
+            if (currentDownload != null) {
+                val formattedSize = Formatter.formatFileSize(context, currentDownload.fileSize)
+                val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                val formattedDate = dateFormat.format(Date(currentDownload.downloadDate))
+
+                Column(
                     modifier = Modifier
-                        .weight(1f)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(DarkGreySurface),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(bottom = 24.dp, start = 16.dp, end = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(download.fileUri.ifEmpty { download.filePath })
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = download.title,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
+                    // Meta text
+                    Text(
+                        text = "${currentDownload.fileName} • $formattedSize • $formattedDate",
+                        color = TextWhite,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0x77000000))
+                            .padding(horizontal = 12.dp, vertical = 5.dp)
                     )
-                }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                Text(
-                    text = download.fileName,
-                    color = PinterestRed,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = "$formattedSize • $formattedDate",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-
-                Text(
-                    text = "Path: Pictures/PinterestDL/${download.fileName}",
-                    color = TextSecondary,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = onOpen,
-                        colors = ButtonDefaults.buttonColors(containerColor = PinterestRed),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.OpenInNew,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Open", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        // Small White Open Button
+                        Surface(
+                            shape = RoundedCornerShape(22.dp),
+                            color = Color.White,
+                            shadowElevation = 8.dp,
+                            modifier = Modifier
+                                .height(44.dp)
+                                .clickable {
+                                    VibrationHelper.vibrateClick(context, 25L)
+                                    openMediaFile(context, currentDownload)
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.OpenInNew,
+                                    contentDescription = "Open",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Open",
+                                    color = Color.Black,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
 
-                    OutlinedButton(
-                        onClick = onShare,
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextWhite),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = null,
-                            tint = TextWhite,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Share", color = TextWhite)
-                    }
+                        // Share Button (Dark Grey Pill)
+                        Surface(
+                            shape = RoundedCornerShape(22.dp),
+                            color = DarkGreySurface,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
+                            modifier = Modifier
+                                .height(44.dp)
+                                .clickable {
+                                    VibrationHelper.vibrateClick(context, 25L)
+                                    shareMediaFile(context, currentDownload)
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = "Share",
+                                    tint = TextWhite,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Share",
+                                    color = TextWhite,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
 
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = PinterestRed
-                        )
+                        // Delete Icon Button
+                        Surface(
+                            shape = CircleShape,
+                            color = DarkGreySurface,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clickable {
+                                    VibrationHelper.vibrateClick(context, 35L)
+                                    onDeleteDownload(currentDownload)
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = TextWhite,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

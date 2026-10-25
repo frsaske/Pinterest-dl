@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,22 +26,26 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.Divider
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,16 +53,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.imageLoader
+import com.example.R
 import com.example.ui.theme.DarkBorder
+import com.example.ui.theme.DarkGreyCard
+import com.example.ui.theme.DarkGreySurface
 import com.example.ui.theme.PitchBlack
-import com.example.ui.theme.PinterestRed
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.util.VibrationHelper
 
 @Composable
 fun MoreScreen(
@@ -66,6 +75,7 @@ fun MoreScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    var showClearHistoryDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -76,84 +86,139 @@ fun MoreScreen(
             .padding(horizontal = 20.dp, vertical = 12.dp)
             .testTag("more_screen")
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // YTDLnis Red App Emblem at the Top (matching user reference screenshot)
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+        // App Emblem Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
-                color = PinterestRed,
-                modifier = Modifier.size(76.dp)
+                shape = RoundedCornerShape(16.dp),
+                color = DarkGreyCard,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
+                modifier = Modifier.size(56.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.CloudDownload,
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_custom),
                         contentDescription = "PinterestDL",
-                        tint = Color.White,
-                        modifier = Modifier.size(42.dp)
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = "PinterestDL",
+                    color = TextWhite,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "v1.2.0 • Pure Black AMOLED",
+                    color = TextMuted,
+                    fontSize = 12.sp
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = DarkBorder, thickness = 1.dp)
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Clean YTDLnis-style Options List (no bloated cards or robotic toggles)
-        MoreActionRow(
+        // Settings Section Header
+        Text(
+            text = "STORAGE & PREFERENCES",
+            color = TextSecondary,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.8.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        SettingRow(
             icon = Icons.Default.Folder,
             title = "Download directory",
-            caption = "Pictures/PinterestDL",
+            subtitle = "Pictures/PinterestDL",
             onClick = {
+                VibrationHelper.vibrateClick(context, 20L)
                 Toast.makeText(context, "Saved to Pictures/PinterestDL", Toast.LENGTH_SHORT).show()
             }
         )
 
-        MoreActionRow(
-            icon = Icons.Default.Tune,
-            title = "File naming scheme",
-            caption = "Sasuke-(title).(ext) with underscores",
+        SettingRow(
+            icon = Icons.Default.HighQuality,
+            title = "Image quality",
+            subtitle = "Highest resolution available (Original)",
             onClick = {
-                Toast.makeText(context, "Format: Sasuke-(title_of_pic).jpg", Toast.LENGTH_SHORT).show()
+                VibrationHelper.vibrateClick(context, 20L)
+                Toast.makeText(context, "All pins download in original resolution", Toast.LENGTH_SHORT).show()
             }
         )
 
-        MoreActionRow(
+        SettingRow(
+            icon = Icons.Default.Vibration,
+            title = "Haptic feedback",
+            subtitle = "Tactile click vibrations enabled",
+            onClick = {
+                VibrationHelper.vibrateClick(context, 35L)
+                Toast.makeText(context, "Haptic feedback active", Toast.LENGTH_SHORT).show()
+            }
+        )
+
+        SettingRow(
             icon = Icons.Default.CleaningServices,
             title = "Clear image cache",
-            caption = "Free up memory and disk cache",
+            subtitle = "Free up device RAM and thumbnail cache",
             onClick = {
+                VibrationHelper.vibrateClick(context, 25L)
                 context.imageLoader.diskCache?.clear()
                 context.imageLoader.memoryCache?.clear()
                 Toast.makeText(context, "Image cache cleared!", Toast.LENGTH_SHORT).show()
             }
         )
 
-        MoreActionRow(
+        SettingRow(
             icon = Icons.Default.DeleteSweep,
             title = "Clear download history",
-            caption = "Clear history list without removing files",
+            subtitle = "Clear database list without deleting saved files",
             onClick = {
-                onClearHistory()
-                Toast.makeText(context, "Download history cleared", Toast.LENGTH_SHORT).show()
+                VibrationHelper.vibrateClick(context, 20L)
+                showClearHistoryDialog = true
             }
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(color = DarkBorder, thickness = 1.dp)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Compact Developer Credit & Contact (Small, neat, human-crafted)
+        // Developer Credit & Contact
+        Text(
+            text = "DEVELOPER & ABOUT",
+            color = TextSecondary,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.8.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Developer Profile Card
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF161619))
+                .clip(RoundedCornerShape(14.dp))
+                .background(DarkGreySurface)
                 .clickable {
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(ClipData.newPlainText("Developer Email", "Sasuke.winx@gmail.com"))
+                    VibrationHelper.vibrateClick(context, 25L)
                     Toast.makeText(context, "Copied Sasuke.winx@gmail.com to clipboard!", Toast.LENGTH_SHORT).show()
                 }
                 .padding(14.dp),
@@ -163,14 +228,14 @@ fun MoreScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
-                    color = PinterestRed.copy(alpha = 0.15f),
-                    modifier = Modifier.size(40.dp)
+                    color = Color.White.copy(alpha = 0.1f),
+                    modifier = Modifier.size(42.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
-                            tint = PinterestRed,
+                            tint = Color.White,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -187,7 +252,7 @@ fun MoreScreen(
                         )
                         Text(
                             text = "ѕαѕυкє",
-                            color = PinterestRed,
+                            color = Color.White,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -195,9 +260,8 @@ fun MoreScreen(
                     }
                     Text(
                         text = "Sasuke.winx@gmail.com",
-                        color = TextWhite,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        color = TextSecondary,
+                        fontSize = 12.5.sp
                     )
                 }
             }
@@ -210,22 +274,27 @@ fun MoreScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Send Email Button
+        // Email Direct Button
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF161619))
+                .clip(RoundedCornerShape(14.dp))
+                .background(DarkGreySurface)
                 .clickable {
+                    VibrationHelper.vibrateClick(context, 20L)
                     val intent = Intent(Intent.ACTION_SENDTO).apply {
                         data = Uri.parse("mailto:Sasuke.winx@gmail.com")
-                        putExtra(Intent.EXTRA_SUBJECT, "PinterestDL Inquiries")
+                        putExtra(Intent.EXTRA_SUBJECT, "PinterestDL Feedback")
                     }
-                    context.startActivity(Intent.createChooser(intent, "Contact Sasuke"))
+                    try {
+                        context.startActivity(Intent.createChooser(intent, "Contact Sasuke"))
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Email: Sasuke.winx@gmail.com", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -233,56 +302,96 @@ fun MoreScreen(
                 Icon(
                     imageVector = Icons.Default.Email,
                     contentDescription = null,
-                    tint = TextSecondary,
+                    tint = TextWhite,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Contact Sasuke (Email)",
+                    text = "Send Developer Feedback",
                     color = TextWhite,
-                    fontSize = 13.sp,
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
 
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextMuted,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // About app
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
             Text(
-                text = "PinterestDL",
-                color = TextSecondary,
-                fontSize = 12.sp
-            )
-            Text(
-                text = "v1.0.0",
+                text = "Email",
                 color = TextMuted,
                 fontSize = 12.sp
             )
         }
 
-        // Bottom nav spacer
-        Spacer(modifier = Modifier.height(96.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // App Description
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFF111114))
+                .padding(14.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(top = 2.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "PinterestDL is a high-speed media downloader built with AMOLED pure black theme and multi-threaded parallel downloads.",
+                color = TextMuted,
+                fontSize = 12.sp,
+                lineHeight = 17.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // Clear History Confirm Dialog
+        if (showClearHistoryDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearHistoryDialog = false },
+                containerColor = DarkGreySurface,
+                title = {
+                    Text("Clear Download History?", color = TextWhite, fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Text(
+                        "This will clear the list of downloaded items from the app without removing the files from your storage.",
+                        color = TextSecondary,
+                        fontSize = 13.5.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClearHistoryDialog = false
+                            onClearHistory()
+                            Toast.makeText(context, "Download history cleared", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Text("Clear", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearHistoryDialog = false }) {
+                        Text("Cancel", color = TextMuted)
+                    }
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun MoreActionRow(
+private fun SettingRow(
     icon: ImageVector,
     title: String,
-    caption: String,
+    subtitle: String,
     onClick: () -> Unit
 ) {
     Row(
@@ -290,43 +399,28 @@ private fun MoreActionRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .clickable { onClick() }
-            .padding(vertical = 12.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 11.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(22.dp)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column {
-                Text(
-                    text = title,
-                    color = TextWhite,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = caption,
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-            }
-        }
-
         Icon(
-            imageVector = Icons.Default.ChevronRight,
+            imageVector = icon,
             contentDescription = null,
-            tint = TextMuted,
-            modifier = Modifier.size(18.dp)
+            tint = TextSecondary,
+            modifier = Modifier.size(20.dp)
         )
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = TextWhite,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = subtitle,
+                color = TextMuted,
+                fontSize = 12.sp
+            )
+        }
     }
 }

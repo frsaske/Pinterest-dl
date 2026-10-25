@@ -2,20 +2,23 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// YTDLnis Exact Theme Colors
-val PitchBlack = Color(0xFF0F0F11)
-val DarkGreySurface = Color(0xFF1E1E1E)
-val DarkGreySurfaceVariant = Color(0xFF26262A)
-val DarkGreyCard = Color(0xFF1E1E1E)
-val DarkPillHighlight = Color(0xFF323238)
-val DarkBorder = Color(0xFF2C2C30)
+// YTDLnis Exact Theme Colors (True Pitch Black AMOLED High Contrast)
+val PitchBlack = Color(0xFF000000)
+val DarkGreySurface = Color(0xFF161619)
+val DarkGreySurfaceVariant = Color(0xFF222228)
+val DarkGreyCard = Color(0xFF18181C)
+val DarkPillHighlight = Color(0xFF2D323E) // YTDLnis bluish-grey active tab indicator
+val DarkBorder = Color(0xFF24242A)
 
-// Brand Accents
-val PinterestRed = Color(0xFFFF2E55)
-val PinterestRedDark = Color(0xFFD61E42)
+// YTDLnis Floating Action Button Electric Blue
+val YtdlnisBlue = Color(0xFF0A66C2)
+
+// Brand & State Accents (Pure High Contrast Monochrome - No Red)
+val AccentWhite = Color(0xFFFFFFFF)
+val AccentGrey = Color(0xFF2C2C32)
 val DownloadSuccessGreen = Color(0xFF4CAF50)
 
-// Text and Content
+// Text and Content (High Contrast)
 val TextWhite = Color(0xFFFFFFFF)
-val TextSecondary = Color(0xFFA5A5AB)
-val TextMuted = Color(0xFF6B6B73)
+val TextSecondary = Color(0xFFA6A6B0)
+val TextMuted = Color(0xFF757580)

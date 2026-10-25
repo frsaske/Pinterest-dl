@@ -1,8 +1,10 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,11 +24,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NorthWest
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -42,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
@@ -53,14 +53,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkGreyCard
 import com.example.ui.theme.DarkGreySurface
 import com.example.ui.theme.PitchBlack
-import com.example.ui.theme.PinterestRed
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.util.VibrationHelper
 
+/**
+ * Top bar matching the exact YTDLnis header style.
+ * Displays "Pinterest" in crisp bold white, "DL" in secondary white.
+ * Pill-shaped search bar with live YouTube-style autocomplete suggestions.
+ */
 @Composable
 fun PinterestTopBar(
     searchQuery: String,
@@ -72,43 +76,42 @@ fun PinterestTopBar(
     onSuggestionClicked: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
-    var showMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(PitchBlack)
-            .statusBarsPadding() // Fix status bar cut-off on modern notched phones
+            .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = 6.dp)
-            .zIndex(10f)
+            .zIndex(20f)
     ) {
-        // Logo Row: Exactly like YTDLnis screenshot
+        // Logo Header: High contrast monochrome YTDLnis typography
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp, bottom = 8.dp),
+                .padding(top = 2.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left-aligned brand logo: "Pinterest" in red + "DL" in white
             Text(
                 text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
-                            color = PinterestRed,
+                            color = TextWhite,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            letterSpacing = (-0.3).sp
+                            fontSize = 22.sp,
+                            letterSpacing = (-0.4).sp
                         )
                     ) {
                         append("Pinterest")
                     }
                     withStyle(
                         style = SpanStyle(
-                            color = TextWhite,
+                            color = TextSecondary,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 20.sp
+                            fontSize = 22.sp
                         )
                     ) {
                         append("DL")
@@ -117,12 +120,12 @@ fun PinterestTopBar(
                 modifier = Modifier.testTag("app_logo")
             )
 
-            // Stylized Developer Watermark
+            // Stylized Developer Watermark (Clean monochrome)
             Text(
                 text = "ѕαѕυкє",
-                color = PinterestRed.copy(alpha = 0.8f),
+                color = TextSecondary,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
+                fontSize = 13.5.sp,
                 letterSpacing = 1.sp
             )
         }
@@ -137,6 +140,7 @@ fun PinterestTopBar(
                         CircleShape
                     },
                     color = DarkGreySurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -147,8 +151,11 @@ fun PinterestTopBar(
                     ) {
                         IconButton(
                             onClick = {
-                                focusManager.clearFocus()
-                                onSearchSubmitted(searchQuery)
+                                if (searchQuery.isNotBlank()) {
+                                    VibrationHelper.vibrateClick(context, 25L)
+                                    focusManager.clearFocus()
+                                    onSearchSubmitted(searchQuery)
+                                }
                             },
                             modifier = Modifier
                                 .size(44.dp)
@@ -169,15 +176,18 @@ fun PinterestTopBar(
                                 Text(
                                     text = "Search or insert URL",
                                     color = TextMuted,
-                                    fontSize = 14.sp
+                                    fontSize = 14.5.sp
                                 )
                             },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             keyboardActions = KeyboardActions(
                                 onSearch = {
-                                    focusManager.clearFocus()
-                                    onSearchSubmitted(searchQuery)
+                                    if (searchQuery.isNotBlank()) {
+                                        VibrationHelper.vibrateClick(context, 25L)
+                                        focusManager.clearFocus()
+                                        onSearchSubmitted(searchQuery)
+                                    }
                                 }
                             ),
                             colors = TextFieldDefaults.colors(
@@ -188,7 +198,7 @@ fun PinterestTopBar(
                                 unfocusedIndicatorColor = Color.Transparent,
                                 focusedTextColor = TextWhite,
                                 unfocusedTextColor = TextWhite,
-                                cursorColor = PinterestRed
+                                cursorColor = TextWhite
                             ),
                             modifier = Modifier
                                 .weight(1f)
@@ -197,8 +207,13 @@ fun PinterestTopBar(
 
                         if (searchQuery.isNotEmpty()) {
                             IconButton(
-                                onClick = { onSearchQueryChanged("") },
-                                modifier = Modifier.size(36.dp)
+                                onClick = {
+                                    VibrationHelper.vibrateClick(context, 20L)
+                                    onSearchQueryChanged("")
+                                },
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .size(36.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
@@ -207,49 +222,8 @@ fun PinterestTopBar(
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
-                        }
-
-                        // Right 3-dot overflow menu
-                        Box {
-                            IconButton(
-                                onClick = { showMenu = true },
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .testTag("search_menu_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Menu options",
-                                    tint = TextSecondary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false },
-                                modifier = Modifier.background(DarkGreySurface)
-                            ) {
-                                val quickQueries = listOf(
-                                    "Sasuke Uchiha",
-                                    "Naruto Wallpapers",
-                                    "Anime 4K Aesthetic",
-                                    "Cyberpunk City",
-                                    "Dark Minimalist"
-                                )
-
-                                quickQueries.forEach { query ->
-                                    DropdownMenuItem(
-                                        text = { Text(query, color = TextWhite, fontSize = 13.sp) },
-                                        onClick = {
-                                            showMenu = false
-                                            focusManager.clearFocus()
-                                            onSearchQueryChanged(query)
-                                            onQuickFilterSelected(query)
-                                        }
-                                    )
-                                }
-                            }
+                        } else {
+                            Spacer(modifier = Modifier.width(8.dp))
                         }
                     }
                 }
@@ -257,14 +231,14 @@ fun PinterestTopBar(
                 // YouTube-Style Realtime Autocomplete Suggestions Dropdown
                 AnimatedVisibility(
                     visible = isSuggestionsVisible && suggestions.isNotEmpty(),
-                    enter = fadeIn(),
-                    exit = fadeOut()
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
                 ) {
                     Surface(
-                        color = Color(0xFF1B1B1E),
-                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                        color = Color(0xFF141418),
+                        shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
-                        shadowElevation = 8.dp,
+                        shadowElevation = 10.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(vertical = 4.dp)) {
@@ -274,9 +248,10 @@ fun PinterestTopBar(
                                         .fillMaxWidth()
                                         .clickable {
                                             focusManager.clearFocus()
+                                            VibrationHelper.vibrateClick(context, 25L)
                                             onSuggestionClicked(suggestion)
                                         }
-                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        .padding(horizontal = 16.dp, vertical = 11.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
@@ -288,13 +263,14 @@ fun PinterestTopBar(
                                             imageVector = Icons.Default.Search,
                                             contentDescription = null,
                                             tint = TextMuted,
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(17.dp)
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Text(
                                             text = suggestion,
                                             color = TextWhite,
-                                            fontSize = 13.sp
+                                            fontSize = 13.5.sp,
+                                            fontWeight = FontWeight.Medium
                                         )
                                     }
 

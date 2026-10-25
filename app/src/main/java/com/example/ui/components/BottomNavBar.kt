@@ -1,6 +1,8 @@
 package com.example.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
@@ -33,15 +37,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.DarkPillHighlight
 import com.example.ui.theme.PitchBlack
-import com.example.ui.theme.PinterestRed
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextWhite
+import com.example.util.VibrationHelper
 
 data class NavItem(
     val title: String,
@@ -50,6 +55,11 @@ data class NavItem(
     val badgeCount: Int = 0
 )
 
+/**
+ * Exact replica of YTDLnis bottom navigation bar.
+ * Selected tab features the pill indicator exclusively enclosing the icon,
+ * with high-contrast text label underneath.
+ */
 @Composable
 fun YtdlnisBottomNavBar(
     selectedTab: Int,
@@ -57,6 +67,8 @@ fun YtdlnisBottomNavBar(
     downloadsBadgeCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     val items = listOf(
         NavItem(
             title = "Home",
@@ -80,7 +92,7 @@ fun YtdlnisBottomNavBar(
         modifier = modifier
             .fillMaxWidth()
             .background(PitchBlack)
-            .padding(vertical = 6.dp, horizontal = 12.dp)
+            .padding(vertical = 4.dp, horizontal = 12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -89,44 +101,57 @@ fun YtdlnisBottomNavBar(
         ) {
             items.forEachIndexed { index, item ->
                 val isSelected = selectedTab == index
-                val pillBackground by animateColorAsState(
+
+                val indicatorColor by animateColorAsState(
                     targetValue = if (isSelected) DarkPillHighlight else Color.Transparent,
-                    label = "pillBackground"
-                )
-                val contentColor by animateColorAsState(
-                    targetValue = if (isSelected) TextWhite else TextMuted,
-                    label = "contentColor"
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                    label = "tab_pill_color"
                 )
 
-                Box(
+                val labelColor by animateColorAsState(
+                    targetValue = if (isSelected) TextWhite else TextMuted,
+                    animationSpec = tween(durationMillis = 180),
+                    label = "tab_text_color"
+                )
+
+                Column(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(pillBackground)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            onTabSelected(index)
+                            if (!isSelected) {
+                                VibrationHelper.vibrateClick(context, 20L)
+                                onTabSelected(index)
+                            }
                         }
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 4.dp)
                         .testTag("nav_tab_${item.title.lowercase()}"),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    // Pill indicator containing the icon
+                    Box(
+                        modifier = Modifier
+                            .width(62.dp)
+                            .height(30.dp)
+                            .clip(CircleShape)
+                            .background(indicatorColor),
+                        contentAlignment = Alignment.Center
                     ) {
                         if (item.badgeCount > 0) {
                             BadgedBox(
                                 badge = {
                                     Badge(
-                                        containerColor = PinterestRed,
-                                        contentColor = Color.White
+                                        containerColor = Color.White,
+                                        contentColor = PitchBlack,
+                                        modifier = Modifier.size(16.dp)
                                     ) {
                                         Text(
-                                            text = item.badgeCount.toString(),
-                                            fontSize = 10.sp
+                                            text = if (item.badgeCount > 99) "99+" else item.badgeCount.toString(),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }
@@ -134,28 +159,29 @@ fun YtdlnisBottomNavBar(
                                 Icon(
                                     imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                                     contentDescription = item.title,
-                                    tint = contentColor,
-                                    modifier = Modifier.size(22.dp)
+                                    tint = if (isSelected) TextWhite else TextMuted,
+                                    modifier = Modifier.size(21.dp)
                                 )
                             }
                         } else {
                             Icon(
                                 imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                                 contentDescription = item.title,
-                                tint = contentColor,
-                                modifier = Modifier.size(22.dp)
+                                tint = if (isSelected) TextWhite else TextMuted,
+                                modifier = Modifier.size(21.dp)
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text = item.title,
-                            color = contentColor,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                        )
                     }
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    Text(
+                        text = item.title,
+                        color = labelColor,
+                        fontSize = 11.5.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        letterSpacing = 0.2.sp
+                    )
                 }
             }
         }

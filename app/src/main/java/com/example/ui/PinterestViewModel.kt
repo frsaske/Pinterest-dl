@@ -221,12 +221,6 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
         val notificationId = pin.id.hashCode()
         viewModelScope.launch {
             updatePinDownloadingState(pin.id, isDownloading = true)
-            _uiState.value = _uiState.value.copy(
-                notification = UiNotification(
-                    message = "Downloading ${pin.title.take(24)}...",
-                    isProgress = true
-                )
-            )
 
             NotificationHelper.showDownloadProgress(
                 getApplication(),
@@ -240,12 +234,6 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
             updatePinDownloadingState(pin.id, isDownloading = false)
 
             result.onSuccess { entity ->
-                _uiState.value = _uiState.value.copy(
-                    notification = UiNotification(
-                        message = "✓ Saved ${entity.fileName}",
-                        isSuccess = true
-                    )
-                )
                 NotificationHelper.showDownloadComplete(
                     getApplication(),
                     notificationId,
@@ -253,11 +241,11 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
                     entity.fileUri
                 )
             }.onFailure { err ->
-                _uiState.value = _uiState.value.copy(
-                    notification = UiNotification(
-                        message = "Download failed: ${err.message}",
-                        isSuccess = false
-                    )
+                NotificationHelper.showDownloadFailed(
+                    getApplication(),
+                    notificationId,
+                    pin.title,
+                    err.message ?: "Download failed"
                 )
             }
         }
@@ -312,11 +300,13 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
             _uiState.value = _uiState.value.copy(
-                isBulkDownloading = false,
-                notification = UiNotification(
-                    message = "Bulk complete! $successCount saved.",
-                    isSuccess = true
-                )
+                isBulkDownloading = false
+            )
+            NotificationHelper.showDownloadComplete(
+                getApplication(),
+                9999,
+                "Bulk Download ($successCount pins)",
+                ""
             )
         }
     }
@@ -324,12 +314,11 @@ class PinterestViewModel(application: Application) : AndroidViewModel(applicatio
     fun cancelBulkDownload() {
         bulkJob?.cancel()
         _uiState.value = _uiState.value.copy(
-            isBulkDownloading = false,
-            notification = UiNotification(
-                message = "Bulk download paused",
-                isSuccess = false
-            )
+            isBulkDownloading = false
         )
+        try {
+            androidx.core.app.NotificationManagerCompat.from(getApplication()).cancel(9999)
+        } catch (_: Exception) { }
     }
 
     private fun updatePinDownloadingState(pinId: String, isDownloading: Boolean) {

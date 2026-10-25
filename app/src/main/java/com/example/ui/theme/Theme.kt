@@ -6,9 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val YtdlnisDarkColorScheme = darkColorScheme(
-    primary = PinterestRed,
-    onPrimary = Color.White,
-    primaryContainer = PinterestRedDark,
+    primary = AccentWhite,
+    onPrimary = Color.Black,
+    primaryContainer = DarkPillHighlight,
     onPrimaryContainer = Color.White,
     secondary = DarkPillHighlight,
     onSecondary = Color.White,
