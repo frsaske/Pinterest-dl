@@ -62,20 +62,20 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk "Sasuke-RetroCam-${GITHUB_SHA::7}.apk"
+        run: cp app/build/outputs/apk/release/app-release.apk "Pinterest-Downloader-${GITHUB_SHA::7}.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sasuke-retrocam-apk
-          path: Sasuke-RetroCam-*.apk
+          name: pinterest-downloader-apk
+          path: Pinterest-Downloader-*.apk
           if-no-files-found: error
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="v1.0.${GITHUB_RUN_NUMBER}"
-          gh release create "$tag" "Sasuke-RetroCam-${GITHUB_SHA::7}.apk" \
-            --title "Sasuke RetroCam $tag" \
+          tag="pinterest-v1.0.${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" "Pinterest-Downloader-${GITHUB_SHA::7}.apk" \
+            --title "Pinterest Downloader $tag" \
             --generate-notes
