@@ -21,10 +21,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -82,9 +82,9 @@ fun YtdlnisBottomNavBar(
             badgeCount = downloadsBadgeCount
         ),
         NavItem(
-            title = "More",
-            selectedIcon = Icons.Filled.MoreHoriz,
-            unselectedIcon = Icons.Outlined.MoreHoriz
+            title = "Settings",
+            selectedIcon = Icons.Filled.Settings,
+            unselectedIcon = Icons.Outlined.Settings
         )
     )
 

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,15 +27,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,14 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.imageLoader
 import com.example.R
 import com.example.ui.theme.DarkBorder
 import com.example.ui.theme.DarkGreyCard
@@ -68,6 +63,14 @@ import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
 import com.example.util.VibrationHelper
 
+/**
+ * Settings Screen: Pure black AMOLED, ultra-clean and human crafted.
+ * Strictly features:
+ * - App overview header
+ * - About app button (with exact user text popup)
+ * - Developer credit & contact (ѕαѕυкє & Sasuke.winx@gmail.com)
+ * No toggles, no sliders, no artificial fluff.
+ */
 @Composable
 fun MoreScreen(
     onClearHistory: () -> Unit = {},
@@ -75,7 +78,7 @@ fun MoreScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    var showClearHistoryDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -83,59 +86,72 @@ fun MoreScreen(
             .background(PitchBlack)
             .statusBarsPadding()
             .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-            .testTag("more_screen")
+            .padding(horizontal = 20.dp, vertical = 14.dp)
+            .testTag("settings_screen")
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
+        // Screen Title: Clear and prominent
+        Text(
+            text = "Settings",
+            color = TextWhite,
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
+        )
 
-        // App Emblem Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // App Emblem Card
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = DarkGreyCard,
+            border = BorderStroke(1.dp, DarkBorder),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = DarkGreyCard,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder),
-                modifier = Modifier.size(56.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_custom),
-                        contentDescription = "PinterestDL",
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = PitchBlack,
+                    border = BorderStroke(1.dp, DarkBorder),
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_launcher_custom),
+                            contentDescription = "PinterestDL Icon",
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = "PinterestDL",
+                        color = TextWhite,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Version 1.2.0 • Pure Black AMOLED",
+                        color = TextMuted,
+                        fontSize = 12.5.sp
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column {
-                Text(
-                    text = "PinterestDL",
-                    color = TextWhite,
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "v1.2.0 • Pure Black AMOLED",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider(color = DarkBorder, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // Settings Section Header
+        // ABOUT APP SECTION
         Text(
-            text = "STORAGE & PREFERENCES",
+            text = "APP INFO",
             color = TextSecondary,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
@@ -143,65 +159,69 @@ fun MoreScreen(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        SettingRow(
-            icon = Icons.Default.Folder,
-            title = "Download directory",
-            subtitle = "Pictures/PinterestDL",
-            onClick = {
-                VibrationHelper.vibrateClick(context, 20L)
-                Toast.makeText(context, "Saved to Pictures/PinterestDL", Toast.LENGTH_SHORT).show()
-            }
-        )
+        // About App Clickable Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(DarkGreySurface)
+                .clickable {
+                    VibrationHelper.vibrateClick(context, 20L)
+                    showAboutDialog = true
+                }
+                .padding(horizontal = 16.dp, vertical = 15.dp)
+                .testTag("about_app_button"),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.08f),
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "About App",
+                            tint = TextWhite,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
 
-        SettingRow(
-            icon = Icons.Default.HighQuality,
-            title = "Image quality",
-            subtitle = "Highest resolution available (Original)",
-            onClick = {
-                VibrationHelper.vibrateClick(context, 20L)
-                Toast.makeText(context, "All pins download in original resolution", Toast.LENGTH_SHORT).show()
-            }
-        )
+                Spacer(modifier = Modifier.width(14.dp))
 
-        SettingRow(
-            icon = Icons.Default.Vibration,
-            title = "Haptic feedback",
-            subtitle = "Tactile click vibrations enabled",
-            onClick = {
-                VibrationHelper.vibrateClick(context, 35L)
-                Toast.makeText(context, "Haptic feedback active", Toast.LENGTH_SHORT).show()
+                Column {
+                    Text(
+                        text = "About app",
+                        color = TextWhite,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Creator message & details",
+                        color = TextMuted,
+                        fontSize = 12.sp
+                    )
+                }
             }
-        )
 
-        SettingRow(
-            icon = Icons.Default.CleaningServices,
-            title = "Clear image cache",
-            subtitle = "Free up device RAM and thumbnail cache",
-            onClick = {
-                VibrationHelper.vibrateClick(context, 25L)
-                context.imageLoader.diskCache?.clear()
-                context.imageLoader.memoryCache?.clear()
-                Toast.makeText(context, "Image cache cleared!", Toast.LENGTH_SHORT).show()
-            }
-        )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.size(14.dp)
+            )
+        }
 
-        SettingRow(
-            icon = Icons.Default.DeleteSweep,
-            title = "Clear download history",
-            subtitle = "Clear database list without deleting saved files",
-            onClick = {
-                VibrationHelper.vibrateClick(context, 20L)
-                showClearHistoryDialog = true
-            }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         HorizontalDivider(color = DarkBorder, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // Developer Credit & Contact
+        // DEVELOPER & CONTACT SECTION
         Text(
-            text = "DEVELOPER & ABOUT",
+            text = "DEVELOPER & CONTACT",
             color = TextSecondary,
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
@@ -221,14 +241,15 @@ fun MoreScreen(
                     VibrationHelper.vibrateClick(context, 25L)
                     Toast.makeText(context, "Copied Sasuke.winx@gmail.com to clipboard!", Toast.LENGTH_SHORT).show()
                 }
-                .padding(14.dp),
+                .padding(14.dp)
+                .testTag("developer_card"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.1f),
+                    color = Color.White.copy(alpha = 0.08f),
                     modifier = Modifier.size(42.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -294,7 +315,8 @@ fun MoreScreen(
                         Toast.makeText(context, "Email: Sasuke.winx@gmail.com", Toast.LENGTH_SHORT).show()
                     }
                 }
-                .padding(horizontal = 14.dp, vertical = 13.dp),
+                .padding(horizontal = 14.dp, vertical = 14.dp)
+                .testTag("contact_button"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -307,119 +329,57 @@ fun MoreScreen(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Send Developer Feedback",
+                    text = "Contact Developer",
                     color = TextWhite,
-                    fontSize = 13.5.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
 
             Text(
-                text = "Email",
+                text = "Sasuke.winx@gmail.com",
                 color = TextMuted,
-                fontSize = 12.sp
+                fontSize = 11.5.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(36.dp))
 
-        // App Description
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF111114))
-                .padding(14.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = TextMuted,
-                modifier = Modifier
-                    .size(18.dp)
-                    .padding(top = 2.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "PinterestDL is a high-speed media downloader built with AMOLED pure black theme and multi-threaded parallel downloads.",
-                color = TextMuted,
-                fontSize = 12.sp,
-                lineHeight = 17.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        // Clear History Confirm Dialog
-        if (showClearHistoryDialog) {
+        // About App Dialog (Prompt 7 exact user message)
+        if (showAboutDialog) {
             AlertDialog(
-                onDismissRequest = { showClearHistoryDialog = false },
+                onDismissRequest = { showAboutDialog = false },
                 containerColor = DarkGreySurface,
                 title = {
-                    Text("Clear Download History?", color = TextWhite, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "About PinterestDL",
+                        color = TextWhite,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
                 },
                 text = {
                     Text(
-                        "This will clear the list of downloaded items from the app without removing the files from your storage.",
-                        color = TextSecondary,
-                        fontSize = 13.5.sp
+                        text = "This app is made by sasuke, using this app you can download pics from Pinterest, no ads 100% opensrc and free forever.. Love from sasuke.",
+                        color = TextWhite,
+                        fontSize = 14.5.sp,
+                        lineHeight = 22.sp
                     )
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            showClearHistoryDialog = false
-                            onClearHistory()
-                            Toast.makeText(context, "Download history cleared", Toast.LENGTH_SHORT).show()
+                            VibrationHelper.vibrateClick(context, 15L)
+                            showAboutDialog = false
                         }
                     ) {
-                        Text("Clear", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showClearHistoryDialog = false }) {
-                        Text("Cancel", color = TextMuted)
+                        Text(
+                            text = "Close",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
-            )
-        }
-    }
-}
-
-@Composable
-private fun SettingRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .clickable { onClick() }
-            .padding(vertical = 11.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = TextSecondary,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = TextWhite,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = subtitle,
-                color = TextMuted,
-                fontSize = 12.sp
             )
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.NorthWest
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -74,6 +75,7 @@ fun PinterestTopBar(
     suggestions: List<String> = emptyList(),
     isSuggestionsVisible: Boolean = false,
     onSuggestionClicked: (String) -> Unit = {},
+    onOpenSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -120,14 +122,42 @@ fun PinterestTopBar(
                 modifier = Modifier.testTag("app_logo")
             )
 
-            // Stylized Developer Watermark (Clean monochrome)
-            Text(
-                text = "ѕαѕυкє",
-                color = TextSecondary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.5.sp,
-                letterSpacing = 1.sp
-            )
+            // Stylized Developer Watermark & Settings shortcut
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "ѕαѕυкє",
+                    color = TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.clickable {
+                        VibrationHelper.vibrateClick(context, 20L)
+                        onOpenSettings?.invoke()
+                    }
+                )
+
+                if (onOpenSettings != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            VibrationHelper.vibrateClick(context, 20L)
+                            onOpenSettings()
+                        },
+                        modifier = Modifier
+                            .size(32.dp)
+                            .testTag("top_settings_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = "Settings",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+                }
+            }
         }
 
         // Pill-shaped Search Bar

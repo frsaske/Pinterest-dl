@@ -99,7 +99,8 @@ fun PinterestAppRoot(
                             onQuickFilterSelected = { filter -> viewModel.performSearch(filter) },
                             suggestions = uiState.searchSuggestions,
                             isSuggestionsVisible = uiState.isSuggestionsVisible,
-                            onSuggestionClicked = { suggestion -> viewModel.performSearch(suggestion) }
+                            onSuggestionClicked = { suggestion -> viewModel.performSearch(suggestion) },
+                            onOpenSettings = { viewModel.selectTab(2) }
                         )
 
                         HomeScreen(
