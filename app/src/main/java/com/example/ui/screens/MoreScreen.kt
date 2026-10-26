@@ -1,5 +1,11 @@
 package com.example.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,11 +23,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -58,6 +68,7 @@ import com.example.util.VibrationHelper
  * Strictly features:
  * - App overview header
  * - About app button (with exact user text popup)
+ * - Developer credit & contact (ѕαѕυкє & Sasuke.winx@gmail.com)
  * No toggles, no sliders, no artificial fluff.
  */
 @Composable
@@ -207,6 +218,130 @@ fun MoreScreen(
         Spacer(modifier = Modifier.height(24.dp))
         HorizontalDivider(color = DarkBorder, thickness = 1.dp)
         Spacer(modifier = Modifier.height(20.dp))
+
+        // DEVELOPER & CONTACT SECTION
+        Text(
+            text = "DEVELOPER & CONTACT",
+            color = TextSecondary,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.8.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Developer Profile Card
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(DarkGreySurface)
+                .clickable {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Developer Email", "Sasuke.winx@gmail.com"))
+                    VibrationHelper.vibrateClick(context, 25L)
+                    Toast.makeText(context, "Copied Sasuke.winx@gmail.com to clipboard!", Toast.LENGTH_SHORT).show()
+                }
+                .padding(14.dp)
+                .testTag("developer_card"),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.08f),
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Developer: ",
+                            color = TextMuted,
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "ѕαѕυкє",
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                    }
+                    Text(
+                        text = "Sasuke.winx@gmail.com",
+                        color = TextSecondary,
+                        fontSize = 12.5.sp
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.Default.ContentCopy,
+                contentDescription = "Copy Email",
+                tint = TextSecondary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Email Direct Button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(DarkGreySurface)
+                .clickable {
+                    VibrationHelper.vibrateClick(context, 20L)
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:Sasuke.winx@gmail.com")
+                        putExtra(Intent.EXTRA_SUBJECT, "PinterestDL Feedback")
+                    }
+                    try {
+                        context.startActivity(Intent.createChooser(intent, "Contact Sasuke"))
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Email: Sasuke.winx@gmail.com", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .padding(horizontal = 14.dp, vertical = 14.dp)
+                .testTag("contact_button"),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = null,
+                    tint = TextWhite,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Contact Developer",
+                    color = TextWhite,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            Text(
+                text = "Sasuke.winx@gmail.com",
+                color = TextMuted,
+                fontSize = 11.5.sp
+            )
+        }
 
         Spacer(modifier = Modifier.height(36.dp))
 

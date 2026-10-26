@@ -1,9 +1,12 @@
 """
 PinterestDL - Python Backend Module for Chaquopy
+Author: Sasuke
+Contact: Sasuke.winx@gmail.com
+Watermark: ѕαѕυкє
 
 Handles real Pinterest search scraping, pagination (50 items/batch),
 and high-resolution image downloading with standardized file naming:
-'PinterestDL-(title_of_pic).(filetype)' with spaces replaced by underscores.
+'Sasuke-(title_of_pic).(filetype)' with spaces replaced by underscores.
 """
 
 import os
@@ -27,8 +30,8 @@ BASE_URL = "https://www.pinterest.com"
 def sanitize_filename(title: str, extension: str = "jpg") -> str:
     """
     Critical requirement:
-    Downloaded file is saved as PinterestDL-(title of pic).(filetype)
-    (e.g., PinterestDL-Naruto_Cosplay.jpg). Spaces in titles are replaced with underscores.
+    Downloaded file MUST be saved as Sasuke-(title of pic).(filetype)
+    (e.g., Sasuke-Naruto_Cosplay.jpg). Spaces in titles are replaced with underscores.
     """
     if not title or not title.strip():
         title = "Pinterest_Image"
@@ -43,7 +46,7 @@ def sanitize_filename(title: str, extension: str = "jpg") -> str:
     if not ext:
         ext = "jpg"
         
-    return f"PinterestDL-{cleaned}.{ext}"
+    return f"Sasuke-{cleaned}.{ext}"
 
 
 def scrape_real_pinterest_search(query: str, offset: int = 0, limit: int = 50, bookmark: Optional[str] = None) -> List[Dict[str, Any]]:
