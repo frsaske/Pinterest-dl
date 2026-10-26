@@ -7,20 +7,20 @@ import org.junit.Test
 
 class ExampleUnitTest {
     @Test
-    fun testSasukeFilenameFormatting() {
+    fun testPinterestFilenameFormatting() {
         val testTitle = "Naruto Cosplay"
         val cleanTitle = testTitle.trim().replace("\\s+".toRegex(), "_")
-        val expected = "Sasuke-$cleanTitle.jpg"
-        assertEquals("Sasuke-Naruto_Cosplay.jpg", expected)
+        val expected = "PinterestDL-$cleanTitle.jpg"
+        assertEquals("PinterestDL-Naruto_Cosplay.jpg", expected)
     }
 
     @Test
-    fun testSasukeFilenameWithMultipleSpacesAndSpecialChars() {
+    fun testPinterestFilenameWithMultipleSpacesAndSpecialChars() {
         val testTitle = "Aesthetic Cyberpunk City // 4K"
         val cleanTitle = testTitle.trim()
             .replace("\\s+".toRegex(), "_")
             .replace("""[\\/:*?"<>|\r\n\t]""".toRegex(), "")
-        val expected = "Sasuke-Aesthetic_Cyberpunk_City__4K.png"
-        assertEquals("Sasuke-Aesthetic_Cyberpunk_City__4K.png", "Sasuke-$cleanTitle.png")
+        val expected = "PinterestDL-Aesthetic_Cyberpunk_City__4K.png"
+        assertEquals("PinterestDL-Aesthetic_Cyberpunk_City__4K.png", "PinterestDL-$cleanTitle.png")
     }
 }

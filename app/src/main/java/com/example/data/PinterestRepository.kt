@@ -63,9 +63,9 @@ class PinterestRepository(
 
     /**
      * Critical requirement:
-     * Sasuke-(title of pic).(filetype) with spaces replaced with underscores.
+     * PinterestDL-(title of pic).(filetype) with spaces replaced with underscores.
      */
-    fun formatSasukeFileName(title: String, extension: String = "jpg"): String {
+    fun formatPinterestFileName(title: String, extension: String = "jpg"): String {
         val safeTitle = title.trim()
             .replace("\\s+".toRegex(), "_")
             .replace("""[\\/:*?"<>|\r\n\t]""".toRegex(), "")
@@ -73,7 +73,7 @@ class PinterestRepository(
             .take(80)
 
         val cleanExt = extension.trimStart('.').ifEmpty { "jpg" }
-        return "Sasuke-$safeTitle.$cleanExt"
+        return "PinterestDL-$safeTitle.$cleanExt"
     }
 
     /**
@@ -370,7 +370,7 @@ class PinterestRepository(
 
     /**
      * Downloads an image file to Pictures/PinterestDL with naming:
-     * Sasuke-(title of pic).(filetype) (spaces replaced with underscores).
+     * PinterestDL-(title of pic).(filetype) (spaces replaced with underscores).
      */
     suspend fun downloadPin(pin: PinItem): Result<DownloadEntity> = withContext(Dispatchers.IO) {
         try {
@@ -385,7 +385,7 @@ class PinterestRepository(
                 else -> "image/jpeg"
             }
 
-            val fileName = formatSasukeFileName(pin.title, extension)
+            val fileName = formatPinterestFileName(pin.title, extension)
             Log.d(TAG, "Downloading pin '${pin.title}' as '$fileName'")
 
             val downloadRequest = Request.Builder()

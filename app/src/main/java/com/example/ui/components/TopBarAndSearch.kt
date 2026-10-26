@@ -122,22 +122,10 @@ fun PinterestTopBar(
                 modifier = Modifier.testTag("app_logo")
             )
 
-            // Stylized Developer Watermark & Settings shortcut
+            // Settings shortcut
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "ѕαѕυкє",
-                    color = TextSecondary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.clickable {
-                        VibrationHelper.vibrateClick(context, 20L)
-                        onOpenSettings?.invoke()
-                    }
-                )
-
                 if (onOpenSettings != null) {
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(

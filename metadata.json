@@ -1,6 +1,5 @@
 {
   "name": "PinterestDL",
-  "description": "YTDLnis-inspired Pinterest media search and bulk downloader with 4-column grid and dark theme.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Pinterest media search and bulk downloader with a 4-column grid and dark theme.",
+  "requestFramePermissions": []
 }

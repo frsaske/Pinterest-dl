@@ -1,8 +1,9 @@
 name: Android Release
 
 on:
+  # Run on pushes to any branch so the ZIP works in repositories whose default
+  # branch is named main, master, or something else.
   push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
